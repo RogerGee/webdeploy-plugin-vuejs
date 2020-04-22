@@ -67,7 +67,7 @@ function buildPlugin(target,settings) {
             var compiler = new VueBuilder(target,settings);
 
             try {
-                compiler.build(resolve);
+                compiler.build(resolve,reject);
             } catch (err) {
                 reject(err);
             }
