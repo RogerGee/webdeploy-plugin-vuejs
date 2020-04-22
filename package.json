@@ -1,0 +1,24 @@
+{
+  "name": "@tccl/vuejs-2.5.x",
+  "version": "1.0.0-dev",
+  "description": "Webdeploy build plugin for Vue.js 2.5",
+  "main": "vuejs.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://tccl-apps/git/webdeploy/vuejs.git"
+  },
+  "keywords": [
+    "webdeploy"
+  ],
+  "author": "Roger Gee",
+  "license": "MIT",
+  "dependencies": {
+    "hash-sum": "^2.0.0",
+    "postcss": "^7.0.27",
+    "vue-template-compiler": "~2.5",
+    "vue-template-es2015-compiler": "^1.9.1"
+  }
+}
