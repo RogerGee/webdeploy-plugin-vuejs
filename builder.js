@@ -94,7 +94,7 @@ class VueBuilder {
 
         // Create new JavaScript target that combines the render function (if
         // any) and <script>.
-        var scriptTarget = this.createScriptTarget(scriptContent,renderInfo);
+        var scriptTarget = this.createScriptTarget(scriptContent,renderInfo,styleTargets.length > 0);
 
         targets.push(scriptTarget);
         styleTargets.forEach((target) => targets.push(target));
@@ -102,7 +102,7 @@ class VueBuilder {
         donefn(targets);
     }
 
-    createScriptTarget(scriptContent,renderInfo) {
+    createScriptTarget(scriptContent,renderInfo,hasStyles) {
         var scriptTarget = this.target.makeOutputTarget(this.target.targetName + ".js");
         var content = format("// Compiled from %s\n",this.target.targetName) + scriptContent;
 
@@ -117,8 +117,13 @@ class VueBuilder {
             content += "};\n";
         }
 
-        // Append scope ID to script target's module exports.
-        content += format("\nexport var _scopeId = '%s';",this.scopeId);
+        if (hasStyles) {
+            // Append scope ID to script target's module exports. This is not
+            // documented in Vue.js API; however, looking at the source, it is
+            // apparent that a _scopeId property is used for applying the scope
+            // ID to components.
+            content += format("\nexport var _scopeId = '%s';\n",this.scopeId);
+        }
 
         scriptTarget.stream.end(content);
         return scriptTarget;
