@@ -86,11 +86,11 @@ class VueBuilder {
         }
 
         // Create style targets from the <style> section(s).
-        var styleTargets = components.styles.map((style) => this.createStyleTarget(style));
+        var styleTargets = this.createStyleTargets(components.styles);
 
         // Add import references to script content for styles.
         var styleImports = makeStyleImports(styleTargets);
-        var scriptContent = styleImports + components.script.content;
+        var scriptContent = format("%s\n%s",components.script.content,styleImports);
 
         // Create new JavaScript target that combines the render function (if
         // any) and <script>.
@@ -124,46 +124,61 @@ class VueBuilder {
         return scriptTarget;
     }
 
-    createStyleTarget(styleInfo) {
-        var lang = styleInfo.lang || "css";
+    createStyleTargets(styleInfoList) {
+        var resultMap = {};
+        var resultList = [];
 
-        if (lang == "css") {
-            var ext = "css";
-            var opts = {
-                source: styleInfo.content,
-                scoped: styleInfo.scoped,
-                id: this.scopeId,
-                trim: true
+        for (let i = 0;i < styleInfoList.length;++i) {
+            var styleInfo = styleInfoList[i];
+            var lang = styleInfo.lang || "css";
+
+            if (lang == "css") {
+                var ext = "css";
+                var opts = {
+                    source: styleInfo.content,
+                    scoped: !!styleInfo.attrs.scoped,
+                    id: this.scopeId,
+                    trim: true
+                }
+
+                const { code, map, errors } = compileStyle(opts);
+
+                if (errors.length) {
+                    throw errors[0];
+                }
+
+                styleInfo.content = code;
+                styleInfo.map = map;
+            }
+            else if (lang == "scss") {
+                var ext = "scss";
+            }
+            else {
+                throw new Error(
+                    format(
+                        "vuejs: target '%s' requires unsupported <style> lang attribute '%s'",
+                        this.target.targetName,
+                        lang
+                    )
+                );
             }
 
-            const { code, map, errors } = compileStyle(opts);
-
-            if (errors.length) {
-                throw errors[0];
+            // Aggregate content by extension.
+            if (!(ext in resultMap)) {
+                resultMap[ext] = format("/* Compiled from %s */\n",this.target.targetName);
+                resultList.push(ext);
             }
-
-            styleInfo.content = code;
-            styleInfo.map = map;
-        }
-        else if (lang == "scss") {
-            var ext = "scss";
-        }
-        else {
-            throw new Error(
-                format(
-                    "vuejs: target '%s' requires unsupported <style> lang attribute '%s'",
-                    this.target.targetName,
-                    lang
-                )
-            );
+            resultMap[ext] += styleInfo.content;
         }
 
-        var styleTarget = this.target.makeOutputTarget(
-            format("%s.css",this.target.targetName)
-        );
+        // Use the result list order to create the targets.
+        return resultList.map((ext) => {
+            var newName = format("%s.%s",this.target.targetName,ext);
+            var styleTarget = this.target.makeOutputTarget(newName);
 
-        styleTarget.stream.end(styleInfo.content);
-        return styleTarget;
+            styleTarget.stream.end(resultMap[ext]);
+            return styleTarget;
+        });
     }
 }
 
