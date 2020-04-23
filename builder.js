@@ -37,10 +37,14 @@ function compileTemplate(template) {
         preserveWhitespace: true
     });
 
+    function createfn(code) {
+        return createTemplateFunction(code,isFunctional);
+    }
+
     return {
-        render: createTemplateFunction(compiled.render),
+        render: createfn(compiled.render),
         staticRenderFns: '['
-            + compiled.staticRenderFns.map(createTemplateFunction).join(',')
+            + compiled.staticRenderFns.map(createfn).join(',')
             + ']',
         isFunctional
     };
