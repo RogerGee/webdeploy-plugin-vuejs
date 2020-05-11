@@ -52,17 +52,18 @@ function compileTemplate(template) {
 
 function makeStyleImports(styleTargets) {
     return styleTargets.map((target) => {
-        return format("import './%s'\n",target.targetName);
-    });
+        return format("import './%s'",target.targetName);
+    }).join("\n");
 }
 
 class VueBuilder {
     constructor(target,settings) {
         this.target = target;
+        this.targetSourcePath = target.getSourceTargetPath();
 
         // Create a scope ID for the builder. This will be used for scoped
         // CSS. (This copies the behavior of vue-loader.)
-        this.scopeId = "data-v-" + hash(this.target.getSourceTargetPath());
+        this.scopeId = "data-v-" + hash(this.targetSourcePath);
 
         this.compilerSettings = settings.vuejsCompilerSettings;
     }
@@ -94,7 +95,7 @@ class VueBuilder {
 
         // Add import references to script content for styles.
         var styleImports = makeStyleImports(styleTargets);
-        var scriptContent = format("%s\n%s",components.script.content,styleImports);
+        var scriptContent = format("%s\n%s\n",components.script.content,styleImports);
 
         // Create new JavaScript target that combines the render function (if
         // any) and <script>.
@@ -108,25 +109,28 @@ class VueBuilder {
 
     createScriptTarget(scriptContent,renderInfo,hasStyles) {
         var scriptTarget = this.target.makeOutputTarget(this.target.targetName + ".js");
-        var content = format("// Compiled from %s\n",this.target.targetName) + scriptContent;
+        var content = format("// Compiled from %s\n",this.targetSourcePath) + scriptContent;
 
         // Append render information to the script target's module exports.
         if (renderInfo) {
             content += "\n";
-            content += "export {\n";
-            content += "  render: " + renderInfo.render + ",\n";
-            content += "  staticRenderFns: " + renderInfo.staticRenderFns + ",\n";
-            content += "  functional: " + (renderInfo.isFunctional ? "true" : "false") + ",\n";
-            content += "  _compiled: true\n";
-            content += "};\n";
+            content += "export " + renderInfo.render + "\n";
+            content += "export const staticRenderFns = " + renderInfo.staticRenderFns + ";\n";
+            content += "export const functional = "
+                + (renderInfo.isFunctional ? "true" : "false") + ";\n";
+            content += "export const _compiled = true;\n";
         }
 
         if (hasStyles) {
+            if (!renderInfo) {
+                content += "\n";
+            }
+
             // Append scope ID to script target's module exports. This is not
             // documented in Vue.js API; however, looking at the source, it is
             // apparent that a _scopeId property is used for applying the scope
             // ID to components.
-            content += format("\nexport var _scopeId = '%s';\n",this.scopeId);
+            content += format("export var _scopeId = '%s';\n",this.scopeId);
         }
 
         scriptTarget.stream.end(content);
@@ -174,7 +178,7 @@ class VueBuilder {
 
             // Aggregate content by extension.
             if (!(ext in resultMap)) {
-                resultMap[ext] = format("/* Compiled from %s */\n",this.target.targetName);
+                resultMap[ext] = format("/* Compiled from %s */\n",this.targetSourcePath);
                 resultList.push(ext);
             }
             resultMap[ext] += styleInfo.content;
