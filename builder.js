@@ -11,6 +11,9 @@ const vuejsCompiler = require('vue-template-compiler');
 const vuejsTranspile = require('vue-template-es2015-compiler');
 const hash = require('hash-sum');
 const { compileStyle } = require('@vue/component-compiler-utils');
+const babel = require('@babel/core');
+
+const plugin_transform_script_target = require('./transform-plugin');
 
 function createTemplateFunction(code,isFunctional) {
     var funcCode;
@@ -109,29 +112,23 @@ class VueBuilder {
 
     createScriptTarget(scriptContent,renderInfo,hasStyles) {
         var scriptTarget = this.target.makeOutputTarget(this.target.targetName + ".js");
-        var content = format("// Compiled from %s\n",this.targetSourcePath) + scriptContent;
+        var content = format("// Compiled from %s\n",this.targetSourcePath);
 
-        // Append render information to the script target's module exports.
-        if (renderInfo) {
-            content += "\n";
-            content += "export " + renderInfo.render + "\n";
-            content += "export const staticRenderFns = " + renderInfo.staticRenderFns + ";\n";
-            content += "export const functional = "
-                + (renderInfo.isFunctional ? "true" : "false") + ";\n";
-            content += "export const _compiled = true;\n";
+        var transform
+        if (!renderInfo && !hasStyles) {
+            transform = {
+                code: scriptContent
+            };
+        }
+        else {
+            transform = babel.transformSync(scriptContent,{
+                plugins: [
+                    [plugin_transform_script_target,{ renderInfo,hasStyles,scopeId:this.scopeId }]
+                ]
+            });
         }
 
-        if (hasStyles) {
-            if (!renderInfo) {
-                content += "\n";
-            }
-
-            // Append scope ID to script target's module exports. This is not
-            // documented in Vue.js API; however, looking at the source, it is
-            // apparent that a _scopeId property is used for applying the scope
-            // ID to components.
-            content += format("export var _scopeId = '%s';\n",this.scopeId);
-        }
+        content += transform.code.trim() + "\n";
 
         scriptTarget.stream.end(content);
         return scriptTarget;
