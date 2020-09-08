@@ -6,11 +6,29 @@
  * Copyright (C) Roger Gee, et al.
  */
 
+function augmentExports({ types:t },id,props) {
+    const nodes = [];
+
+    Object.keys(props).forEach((prop) => {
+        nodes.push(
+            t.expressionStatement(
+                t.assignmentExpression(
+                    '=',
+                    t.memberExpression(id,t.identifier(prop)),
+                    props[prop]
+                )
+            )
+        );
+    });
+
+    return nodes;
+}
+
 module.exports = function(babel) {
     const { types:t } = babel;
 
     function firstExpr(file) {
-        var node = file.program.body[0];
+        let node = file.program.body[0];
 
         if (t.isFunctionDeclaration(node)) {
             node = t.functionExpression(node.id,node.params,node.body,node.generator,node.async);
@@ -32,7 +50,7 @@ module.exports = function(babel) {
                 const decl = path.node.declaration;
                 const { renderInfo, hasStyles, scopeId } = state.opts;
 
-                var props = {};
+                const props = {};
                 if (renderInfo) {
                     props['render'] = firstExpr(
                         babel.parseSync(renderInfo.render)
@@ -61,25 +79,22 @@ module.exports = function(babel) {
                     });
                 }
                 else if (t.isIdentifier(decl)) {
-                    var nodes = [];
-
-                    Object.keys(props).forEach((prop) => {
-                        nodes.push(
-                            t.expressionStatement(
-                                t.assignmentExpression(
-                                    '=',
-                                    t.memberExpression(decl,t.identifier(prop)),
-                                    props[prop]
-                                )
-                            )
-                        );
-                    });
+                    const nodes = augmentExports(babel,decl,props);
                     nodes.push(path.node)
 
                     path.replaceWithMultiple(nodes);
                 }
                 else {
-                    throw new Error("Vue component <script> export cannot be " + decl.type);
+                    const tmpId = t.identifier("_exportDefault");
+                    const tmpDecl = t.variableDeclarator(tmpId,decl);
+                    const tmpDeclStmt = t.variableDeclaration("var",[tmpDecl]);
+
+                    const nodes = augmentExports(babel,tmpId,props);
+                    nodes.unshift(tmpDeclStmt);
+                    nodes.push(t.exportDefaultDeclaration(tmpId));
+
+                    path.replaceWithMultiple(nodes);
+                    path.stop();
                 }
             }
         }
