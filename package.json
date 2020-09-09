@@ -1,5 +1,5 @@
 {
-  "name": "@tccl/vuejs-2.5.x",
+  "name": "@tccl/webdeploy-vuejs",
   "version": "1.0.0-dev",
   "description": "Webdeploy build plugin for Vue.js 2.5",
   "main": "vuejs.js",
