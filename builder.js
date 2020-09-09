@@ -16,10 +16,10 @@ const babel = require('@babel/core');
 const plugin_transform_script_target = require('./transform-plugin');
 
 function createTemplateFunction(code,isFunctional) {
-    var funcCode;
+    let funcCode;
 
     if (isFunctional) {
-        var opts = {
+        const opts = {
             transforms: {
                 stripWithFunctional: true
             }
@@ -36,7 +36,7 @@ function createTemplateFunction(code,isFunctional) {
 function compileTemplate(template) {
     const isFunctional = !!template.attrs.functional;
 
-    var compiled = vuejsCompiler.compile(template.content, {
+    const compiled = vuejsCompiler.compile(template.content, {
         preserveWhitespace: true
     });
 
@@ -72,11 +72,10 @@ class VueBuilder {
     }
 
     build(donefn,errfn) {
-        var targets = [];
+        const targets = [];
 
         // Parse the SFC target into its components.
-        var components;
-        components = vuejsCompiler.parseComponent(this.target.content,this.compilerSettings);
+        const components = vuejsCompiler.parseComponent(this.target.content,this.compilerSettings);
 
         if (!components.script || !components.script.content) {
             throw new Error(
@@ -88,21 +87,21 @@ class VueBuilder {
         }
 
         // Compile the <template> section into render function object (if any).
-        var renderInfo;
+        let renderInfo;
         if (components.template) {
             renderInfo = compileTemplate(components.template);
         }
 
         // Create style targets from the <style> section(s).
-        var styleTargets = this.createStyleTargets(components.styles);
+        const styleTargets = this.createStyleTargets(components.styles);
 
         // Add import references to script content for styles.
-        var styleImports = makeStyleImports(styleTargets);
-        var scriptContent = format("%s\n%s\n",components.script.content,styleImports);
+        const styleImports = makeStyleImports(styleTargets);
+        const scriptContent = format("%s\n%s\n",components.script.content,styleImports);
 
         // Create new JavaScript target that combines the render function (if
         // any) and <script>.
-        var scriptTarget = this.createScriptTarget(scriptContent,renderInfo,styleTargets.length > 0);
+        const scriptTarget = this.createScriptTarget(scriptContent,renderInfo,styleTargets.length > 0);
 
         targets.push(scriptTarget);
         styleTargets.forEach((target) => targets.push(target));
@@ -111,10 +110,10 @@ class VueBuilder {
     }
 
     createScriptTarget(scriptContent,renderInfo,hasStyles) {
-        var scriptTarget = this.target.makeOutputTarget(this.target.targetName + ".js");
-        var content = format("// Compiled from %s\n",this.targetSourcePath);
+        const scriptTarget = this.target.makeOutputTarget(this.target.targetName + ".js");
+        let content = format("// Compiled from %s\n",this.targetSourcePath);
 
-        var transform
+        let transform
         if (!renderInfo && !hasStyles) {
             transform = {
                 code: scriptContent
@@ -135,21 +134,21 @@ class VueBuilder {
     }
 
     createStyleTargets(styleInfoList) {
-        var resultMap = {};
-        var resultList = [];
+        const resultMap = {};
+        const resultList = [];
 
         for (let i = 0;i < styleInfoList.length;++i) {
-            var styleInfo = styleInfoList[i];
-            var lang = styleInfo.lang || "css";
+            let ext;
+            const styleInfo = styleInfoList[i];
+            const lang = styleInfo.lang || "css";
 
             if (lang == "css") {
-                var ext = "css";
-                var opts = {
+                const opts = {
                     source: styleInfo.content,
                     scoped: !!styleInfo.attrs.scoped,
                     id: this.scopeId,
                     trim: true
-                }
+                };
 
                 const { code, map, errors } = compileStyle(opts);
 
@@ -159,9 +158,11 @@ class VueBuilder {
 
                 styleInfo.content = code;
                 styleInfo.map = map;
+
+                ext = "css";
             }
             else if (lang == "scss") {
-                var ext = "scss";
+                ext = "scss";
             }
             else {
                 throw new Error(
@@ -183,8 +184,8 @@ class VueBuilder {
 
         // Use the result list order to create the targets.
         return resultList.map((ext) => {
-            var newName = format("%s.%s",this.target.targetName,ext);
-            var styleTarget = this.target.makeOutputTarget(newName);
+            const newName = format("%s.%s",this.target.targetName,ext);
+            const styleTarget = this.target.makeOutputTarget(newName);
 
             styleTarget.stream.end(resultMap[ext]);
             return styleTarget;
@@ -194,4 +195,4 @@ class VueBuilder {
 
 module.exports = {
     VueBuilder
-}
+};

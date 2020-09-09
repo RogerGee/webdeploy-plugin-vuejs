@@ -39,8 +39,9 @@ function makeOption(settings,key,type,defaultValue) {
 }
 
 function buildPlugin(target,settings) {
+    const options = {};
+
     try {
-        var options = {};
         for (let i = 0;i < OPTION_SCHEMA.length;++i) {
             let opt = OPTION_SCHEMA[i];
             options[opt.key] = makeOption(settings,opt.key,opt.type,opt.defaultValue);
@@ -52,7 +53,7 @@ function buildPlugin(target,settings) {
 
     if (options.validateFileExtension) {
         if (!target.targetName.match(VUE_FILE)) {
-            let err = new Error(
+            const err = new Error(
                 format(
                     "vuejs: target '%s' must have .vue extension",
                     target.targetName
@@ -64,7 +65,7 @@ function buildPlugin(target,settings) {
 
     return new Promise((resolve,reject) => {
         target.loadContent().then((content) => {
-            var compiler = new VueBuilder(target,settings);
+            const compiler = new VueBuilder(target,settings);
 
             try {
                 compiler.build(resolve,reject);
@@ -77,4 +78,4 @@ function buildPlugin(target,settings) {
 
 module.exports = {
     exec: buildPlugin
-}
+};
