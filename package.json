@@ -1,6 +1,6 @@
 {
   "name": "@webdeploy/plugin-vuejs",
-  "version": "1.0.0-dev",
+  "version": "1.0.0",
   "description": "Webdeploy build plugin for Vue.js component files",
   "main": "vuejs.js",
   "scripts": {
