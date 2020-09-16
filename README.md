@@ -1,10 +1,6 @@
 # vuejs (webdeploy plugin)
 
-Provides a `webdeploy` build plugin that builds Vue.js (`.vue`) files.
-
-Authors:
-
-- Roger Gee <roger.gee@tulsalibrary.org>
+> Build plugin that compiles Vue.js single-file component files
 
 ## Synopsis
 
@@ -12,16 +8,13 @@ This build plugin compiles `.vue` single-file component files. A single-file com
 
 Scripts in component files must use ES6 JavaScript modules for exporting the component object.
 
-## Versioning
+## Install
 
-This plugin is released for each Vue.js minor version. You should always use the highest patch version corresponding to your minor version of Vue.js.
+~~~
+npm install --save-dev @webdeploy/plugin-vuejs vue-template-compiler
+~~~
 
-Supported versions:
-
-| Version | Package Name |
-|--|--|
-| `2.5.x` | `vuejs-2.5.x` |
-| `2.6.x` | `vuejs-2.6.x` |
+When installing this plugin, you should also install `vue-template-compiler` at the correct version required for your project.
 
 ## Plugin Settings
 
